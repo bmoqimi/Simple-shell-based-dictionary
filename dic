@@ -1,0 +1,21 @@
+#!/bin/sh
+
+#This shell script uses sqlite databases provided by mdic and returns the meaning 
+#the goal was a fast used dictionary for terminal
+
+DICT_PATH="/usr/share/english-english.m2"
+
+
+
+if [ $# -eq "0" ]
+then
+	echo "Usage : dic [word]"
+	echo "Remember you can use multiple words but they will be passed as one argument like: the great britain"
+	return 2
+fi
+
+words="$@"
+query="select wmean from word where wname='$words'"
+meaning=$(sqlite3 $DICT_PATH "$query;")
+echo $meaning
+
