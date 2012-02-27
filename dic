@@ -2,7 +2,7 @@
 
 #This shell script uses sqlite databases provided by mdic and returns the meaning 
 #the goal was a fast used dictionary for terminal
-
+#TODO add word history so you can see the number of times a word is looked up and then will decide what to do with it later
 DICT_PATH="/usr/share/english-english.m2"
 
 
