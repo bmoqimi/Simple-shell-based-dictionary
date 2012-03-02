@@ -3,7 +3,11 @@
 #This shell script uses sqlite databases provided by mdic and returns the meaning 
 #the goal was a fast used dictionary for terminal
 #TODO add word history so you can see the number of times a word is looked up and then will decide what to do with it later
+#TODO add spell check feature
 DICT_PATH="/usr/share/english-english.m2"
+TMP_FILE="/tmp/search"
+ISPELL="/usr/bin/ispell"
+#please note that spell checking was just added for fun. it is the funniest way you can do it.
 
 
 
@@ -13,9 +17,52 @@ then
 	echo "Remember you can use multiple words but they will be passed as one argument like: the great britain"
 	return 2
 fi
-
+if [ "$1" = "-s" ]
+then
+  SPELL="true"
+  shift
+fi
 words="$@"
 query="select wmean from word where wname='$words'"
 meaning=$(sqlite3 $DICT_PATH "$query;")
-echo $meaning
 
+if [ ! -z "$meaning" ]
+then
+  echo "$words means: $meaning"
+  exit
+fi
+
+if [ "$SPELL" = "true" ]
+then
+  if [ -x "$ISPELL" ]
+  then
+    result_line=$(echo "$words" | ispell -a | head -2 | tail -1)
+    result_char=$(echo $result_line | cut -d" " -f1 )
+    if [ "$result_char" = "+" ]
+    then
+      words=$(echo $result_line | cut -d" " -f2)
+      SPELL="false"
+    elif [ "$result_char" = "&" ]
+          then
+              words=$(echo $result_line | cut -d\, -f1  | cut -d" " -f5)
+              SPELL="false"
+            fi
+            #our job with ispell is finished here
+  fi
+  #we have to do spell check but we dont have ispell installed so we use dummy google method
+  #this will probaby won't work for mutiple words but I have no idea it may :)
+fi
+if [ "$SPELL" = "true" ]
+then
+    url="www.google.com/search?q='$words'"
+    w3m -dump_source $url > $TMP_FILE
+    words=$(cat $TMP_FILE | grep -o -e 'search?hl=en\&amp;q=.[a-z]*.&amp;spell=1' | cut -d\= -f3 | cut -d\& -f1)
+  fi
+#google simetimes adds extra ' "" so we have to check first
+words=$(echo $words | tr -d "'")
+query="select wmean from word where wname='$words'"
+meaning=$(sqlite3 $DICT_PATH "$query;")
+if [ ! -z "$meaning" -a ! -z "$words" ]
+then
+  echo "$words means: $meaning"
+fi
