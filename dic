@@ -1,22 +1,45 @@
-#!/bin/sh
+#!/bin/bash
 
+
+function check_history
+{
+  #we are going to see if you were stupid enough to look up the word many times and remind of of that
+  #this may not work perfectly for multi part words
+  declare -g lookups="0"
+  lookups=$(grep -w -s "$words" "$HISTORY_FILE" | wc -l)
+}
+function check_and_print
+{
+  query="select wmean from word where wname='$words'"
+  meaning=$(sqlite3 $DICT_PATH "$query;")
+  check_history
+  if [ ! -z "$meaning" -a ! -z "$words" ]
+  then
+    if [ "$lookups" != "0" ]
+    then
+      echo "You have looked up this word $lookups times before."
+    fi
+    echo "$words" >> "$HISTORY_FILE"
+    echo "$words means: $meaning"
+    exit
+  fi
+}
 #This shell script uses sqlite databases provided by mdic and returns the meaning 
 #the goal was a fast used dictionary for terminal
 #TODO add word history so you can see the number of times a word is looked up and then will decide what to do with it later
 #TODO add spell check feature and make sure it goes through all ways
-DICT_PATH="/usr/share/english-english.m2"
-TMP_FILE="/tmp/search"
-ISPELL="/usr/bin/ispell"
-HISTORY_FILE="/home/$USER/.dic_history"
+declare -g DICT_PATH="/usr/share/english-english.m2"
+declare -g TMP_FILE="/tmp/search"
+declare -g ISPELL="/usr/bin/ispell"
+declare -g HISTORY_FILE="/home/$USER/.dic_history"
+declare -g words
 #please note that spell checking was just added for fun. it is the funniest way you can do it.
-
-
 
 if [ $# -eq "0" ]
 then
 	echo "Usage : dic [word]"
 	echo "Remember you can use multiple words but they will be passed as one argument like: the great britain"
-	return 2
+	exit
 fi
 if [ "$1" = "-s" ]
 then
@@ -24,15 +47,16 @@ then
   shift
 fi
 words="$@"
-query="select wmean from word where wname='$words'"
-meaning=$(sqlite3 $DICT_PATH "$query;")
-
-if [ ! -z "$meaning" ]
-then
-  echo "$words" >> $HISTORY_FILE
-  echo "$words means: $meaning"
-  exit
-fi
+#query="select wmean from word where wname='$words'"
+#meaning=$(sqlite3 $DICT_PATH "$query;")
+#
+#if [ ! -z "$meaning" ]
+#then
+#  echo "$words" >> $HISTORY_FILE
+#  echo "$words means: $meaning"
+#  exit
+#fi
+check_and_print
 
 if [ "$SPELL" = "true" ]
 then
@@ -62,10 +86,6 @@ then
   fi
 #google simetimes adds extra ' "" so we have to check first
 words=$(echo $words | tr -d "'")
-query="select wmean from word where wname='$words'"
-meaning=$(sqlite3 $DICT_PATH "$query;")
-if [ ! -z "$meaning" -a ! -z "$words" ]
-then
-  echo "$words" >> "$HISTORY_FILE"
-  echo "$words means: $meaning"
-fi
+check_and_print
+######################main ends here
+

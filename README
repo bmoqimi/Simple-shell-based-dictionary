@@ -11,4 +11,4 @@ out and use it .
 It may probably won't work for double word combinations or things that google response is one character different than what i thought
 would be. I can't do nothing for it ;)
 
-And the list of lookups is stored in a history file, I intend to add a switch to check wether I have looked up this word before or not and how many times.
+And the list of lookups is stored in a history file, so that when you look up a word more than on time it warns you.
