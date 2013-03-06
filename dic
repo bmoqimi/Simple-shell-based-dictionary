@@ -1,6 +1,9 @@
 #!/bin/bash
-
-
+#This shell script uses sqlite databases provided by mdic and returns the meaning 
+#the goal was a fast used dictionary for terminal
+#TODO add -v for version and -c for a count of how many words you looked up
+#TODO use getops instead of current switch system
+#TODO add -a to enable a word and its meaning to be added to dictionary when it doesn't exist or maybe to correct it.
 function check_history
 {
   #we are going to see if you were stupid enough to look up the word many times and remind of of that
@@ -12,6 +15,7 @@ function check_and_print
 {
   query="select wmean from word where wname='$words'"
   meaning=$(sqlite3 $DICT_PATH "$query;")
+  meaning_persian=$(sqlite3 $DICT2_PATH "$query;")
   check_history
   if [ ! -z "$meaning" -a ! -z "$words" ]
   then
@@ -21,18 +25,23 @@ function check_and_print
     fi
     echo "$words" >> "$HISTORY_FILE"
     echo "$words means: $meaning"
-    exit
   fi
+  #for persian meaning now
+  if [ ! -z "$meaning" -a ! -z "$words" ]
+  then
+    mp=`echo $meaning_persian | tr -d \&`
+    zenity --text="$mp" --info
+#    echo $meaning_persian
+  fi
+    exit
 }
-#This shell script uses sqlite databases provided by mdic and returns the meaning 
-#the goal was a fast used dictionary for terminal
-#TODO add word history so you can see the number of times a word is looked up and then will decide what to do with it later
-#TODO add spell check feature and make sure it goes through all ways
 declare -g DICT_PATH="/usr/share/english-english.m2"
+declare -g DICT2_PATH="/usr/share/german-persian.m2"
 declare -g TMP_FILE="/tmp/search"
 declare -g ISPELL="/usr/bin/ispell"
 declare -g HISTORY_FILE="/home/$USER/.dic_history"
 declare -g words
+declare -g version="0.5"
 #please note that spell checking was just added for fun. it is the funniest way you can do it.
 
 if [ $# -eq "0" ]
